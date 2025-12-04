@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   UserRole,
   UserProfile,
@@ -43,7 +43,7 @@ import { Logo } from "./components/Logo";
 import { HRModule } from "./components/erp/HRModule";
 import { FinanceModule } from "./components/erp/FinanceModule";
 import { SmartAssistant } from "./components/SmartAssistant";
-import { LogOut, ShieldCheck, Loader2 } from "lucide-react";
+import { LogOut, ShieldCheck, Loader2, Menu } from "lucide-react";
 import { LoginPage } from "./components/LoginPage";
 import { Sidebar } from "./components/layout/Sidebar";
 
@@ -54,6 +54,9 @@ const App = () => {
   const [rates, setRates] = useState<Rates | null>(null);
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // NEW: State for mobile sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [view, setView] = useState<
     | "DASHBOARD"
@@ -92,12 +95,12 @@ const App = () => {
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
 
   // --- Auth Handlers ---
-
   const handleLogout = () => {
     setCurrentUser(null);
     setActiveSheet(null);
     setCurrentMonthSheet(null);
     setPendingApprovals([]);
+    setIsSidebarOpen(false);
   };
 
   const handleInstallApp = () => {
@@ -109,9 +112,6 @@ const App = () => {
   useEffect(() => {
     const init = async () => {
       try {
-        // Add a small artificial delay to show off the new loading screen if data loads too fast
-        // await new Promise(resolve => setTimeout(resolve, 1500));
-
         const r = await getRates();
         setRates(r);
         const u = await getAllUsers();
@@ -129,6 +129,11 @@ const App = () => {
     if (!currentUser) return;
     refreshDashboardData();
   }, [currentUser?.uid, view]);
+
+  // Close sidebar when view changes on mobile
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [view]);
 
   const refreshDashboardData = async () => {
     if (!currentUser) return;
@@ -257,21 +262,17 @@ const App = () => {
     alert(`Logged in as ${user.displayName}`);
   };
 
-  // --- NEW LOADING SCREEN ---
+  // --- LOADING SCREEN ---
   if (loading && !currentUser) {
     return (
       <div className="min-h-screen bg-[#050A14] flex flex-col items-center justify-center relative overflow-hidden font-sans">
-        {/* Ambient Glows */}
         <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-[#8B1E1E] rounded-full mix-blend-screen filter blur-[100px] opacity-10 animate-pulse"></div>
         <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-[#102A63] rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
 
         <div className="z-10 flex flex-col items-center">
-          {/* Logo */}
           <div className="mb-8 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
             <Logo className="h-24" variant="light" />
           </div>
-
-          {/* Spinner & Text */}
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <div className="absolute inset-0 rounded-full blur-[4px] bg-[#8B1E1E]/50"></div>
@@ -286,11 +287,6 @@ const App = () => {
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Footer Version */}
-        <div className="absolute bottom-8 text-slate-700 text-xs">
-          v{APP_VERSION}
         </div>
       </div>
     );
@@ -322,8 +318,10 @@ const App = () => {
   ].includes(currentUser.role);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row relative">
       <NetworkStatus />
+
+      {/* Sidebar - Passed isOpen and onClose for mobile control */}
       <Sidebar
         currentUser={currentUser}
         view={view}
@@ -331,15 +329,32 @@ const App = () => {
         pendingApprovals={pendingApprovals}
         onLogout={handleLogout}
         onInstallApp={handleInstallApp}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        <div className="bg-white border-b border-slate-200 p-4 flex justify-between items-center md:hidden">
-          <Logo className="h-8" />
-          <button onClick={handleLogout} aria-label="Logout" title="Logout">
-            <LogOut size={18} />
+        {/* Mobile Header */}
+        <div className="bg-white border-b border-slate-200 p-4 flex justify-between items-center md:hidden z-10 shadow-sm">
+          <div className="flex items-center gap-3">
+            {/* Toggle Button */}
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-1.5 -ml-2 text-slate-600 hover:bg-slate-100 rounded-md"
+            >
+              <Menu size={24} />
+            </button>
+            <Logo className="h-6" />
+          </div>
+          <button
+            onClick={handleLogout}
+            aria-label="Logout"
+            className="text-slate-500 hover:text-red-500"
+          >
+            <LogOut size={20} />
           </button>
         </div>
+
         <div className="flex-1 overflow-auto p-4 md:p-8">
           {view === "DASHBOARD" && (
             <div className="max-w-5xl space-y-6">
@@ -409,9 +424,9 @@ const App = () => {
                   {pendingApprovals.map((s) => (
                     <div
                       key={s.id}
-                      className="p-4 border mb-2 flex justify-between bg-white rounded items-center"
+                      className="p-4 border mb-2 flex justify-between bg-white rounded items-center shadow-sm"
                     >
-                      <span>
+                      <span className="text-sm font-medium">
                         {allUsers.find((u) => u.uid === s.userId)?.displayName}{" "}
                         - ₹{s.entries.reduce((a, b) => a + b.totalAmount, 0)}
                       </span>
@@ -431,9 +446,9 @@ const App = () => {
                   {pendingTourPlans.map((p) => (
                     <div
                       key={p.id}
-                      className="p-4 border mb-2 flex justify-between bg-white rounded items-center"
+                      className="p-4 border mb-2 flex justify-between bg-white rounded items-center shadow-sm"
                     >
-                      <span>
+                      <span className="text-sm font-medium">
                         {allUsers.find((u) => u.uid === p.userId)?.displayName}{" "}
                         - {getMonthName(p.month)} {p.year}
                       </span>
@@ -464,15 +479,11 @@ const App = () => {
               >
                 Back to Approvals
               </Button>
-              {/* We need to pass the user object of the plan owner, not current user */}
               {(() => {
                 const planOwner = allUsers.find(
                   (u) => u.uid === activeTourPlan.userId
                 );
                 if (!planOwner) return <div>User not found</div>;
-                // We need to modify TourPlanner to accept 'plan' prop instead of loading it?
-                // Currently TourPlanner loads plan by itself based on user.uid.
-                // So we can pass planOwner as 'user' prop.
                 return <TourPlanner user={planOwner} canApprove={true} />;
               })()}
             </div>
