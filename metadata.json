@@ -1,0 +1,7 @@
+{
+  "name": "Tertius Integrity AI",
+  "description": "A comprehensive field expense management system for Medical Representatives and Managers with role-based workflows and automated calculations.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

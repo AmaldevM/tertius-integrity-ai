@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tertius Integrity AI</string>
+    <string name="title_activity_main">Tertius Integrity AI</string>
+    <string name="package_name">com.tertius.integrity</string>
+    <string name="custom_url_scheme">com.tertius.integrity</string>
+</resources>
