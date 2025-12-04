@@ -6,7 +6,7 @@ interface LogoProps {
 }
 
 export const Logo: React.FC<LogoProps> = ({
-  className = "h-10",
+  className = "h-12",
   variant = "dark",
 }) => {
   const [imgError, setImgError] = useState(false);
