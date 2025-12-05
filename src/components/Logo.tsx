@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import logoFallback from "../assets/Logo.png";
+import logoFallback from "/src/assets/logo.png";
+
 
 interface LogoProps {
   className?: string;
